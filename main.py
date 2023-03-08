@@ -1,6 +1,8 @@
+import os
 from time import sleep
 from random import randint
 
+SIZE = 9
 
 class BoardException(Exception):
     pass
@@ -62,14 +64,14 @@ class Ship:
 
 
 class Board:
-    def __init__(self, size=6, hid=False):
+    def __init__(self, size=SIZE, hid=False):
         self.count = 0
         self.size = size
         self.hid = hid
         self.busy = []
         self.fine_shot = []
         self.ships = []
-        self.field = [['○'] * size for _ in range(size)]
+        self.field = [['·'] * size for _ in range(size)]
 
     def add_ship(self, ship):
         for p in ship.points:
@@ -93,7 +95,7 @@ class Board:
                 near = Point(p.x + dx, p.y + dy)
                 if not (self.out(near)) and not (self.busy_check(near)):
                     if show:
-                        self.field[near.x][near.y] = '●'
+                        self.field[near.x][near.y] = 'x'
                     self.busy.append(near)
 
     def busy_check(self, p):
@@ -126,20 +128,20 @@ class Board:
                     print('Корабль повреждён!')
                     return True
 
-        self.field[p.x][p.y] = "●"
+        self.field[p.x][p.y] = 'x'
         print('Мимо!')
         return False
 
-    def __str__(self, size=6):
+    def __str__(self, size=SIZE):
         self.size = size
-        res = '  |'
+        res = ' |'
         for u in range(size):
             res += f' {u + 1} |'
         for w, row in enumerate(self.field):
-            res += f'\n{w + 1} | ' + ' | '.join(row) + ' |'
+            res += f'\n{w + 1}| ' + ' | '.join(row) + ' |'
 
         if self.hid:
-            res = res.replace('░', '○')
+            res = res.replace('░', '·')
         return res
 
     def begin(self):
@@ -197,7 +199,7 @@ class AI(Player):
                     else:
                         ts = target_kit[0]
             else:
-                ts = Point(randint(0, 5), randint(0, 5))
+                ts = Point(randint(0, SIZE-1), randint(0, SIZE-1))
             return ts
 
         while True:
@@ -209,7 +211,7 @@ class AI(Player):
             except BoardWrongShipException:
                 pass
 
-        sleep(3)
+        sleep(2)
         print(f'Ход компьютера: {p.x + 1} {p.y + 1}')
 
         return p
@@ -218,7 +220,7 @@ class AI(Player):
 class User(Player):
     def ask(self):
         while True:
-            coordinates = input('Ваш ход: ').split()
+            coordinates = list(input('Введите № строки, № столбца (без пробела):...'))
 
             if len(coordinates) != 2:
                 print(' Введите 2 координаты! ')
@@ -226,7 +228,7 @@ class User(Player):
 
             x, y = coordinates
 
-            if not (x.isdigit()) or not (y.isdigit()):
+            if (not (x.isdigit())) or (not (y.isdigit())):
                 print(' Введите числа! ')
                 continue
 
@@ -235,9 +237,9 @@ class User(Player):
 
 
 class Game:
-    def __init__(self, size=6):
+    def __init__(self, size=SIZE):
         self.size = size
-        self.ship_lens = [3, 2, 2, 1, 1, 1]
+        self.ship_lens = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
         human_board = self.random_board()
         comp_board = self.random_board()
         comp_board.hid = True
@@ -270,23 +272,19 @@ class Game:
 
     @staticmethod
     def poster():
-        print(f'\n'
-              f'                        и г р а        \n'
-              f'                      МОРСКОЙ  БОЙ        \n'
-              f'\n'
-              f' формат ввода: x y  (x - № строки, y - № столбца)\n')
+        print(f'                            М О Р С К О Й    Б О Й')
 
     def game_step(self):
         num = 0
 
         def print_boards():
-            print('̅' * 60)
-            print('      Ваша доска' + ' ' * 22 + 'Доска компьютера')
+            print(' ' * 15 + 'Ваша доска' + ' ' * 28 + 'Доска компьютера')
             us_board = str(self.us.player_board).split('\n')
             ai_board = str(self.ai.player_board).split('\n')
             us_ai = ''
             for i in range(len(us_board)):
-                us_ai += ''.join(us_board[i]) + ' ' * 5 + ''.join(ai_board[i]) + '\n'
+                us_ai += ''.join(us_board[i]) + '   ' + ''.join(ai_board[i]) + '\n'
+                us_ai += '-'*38 + '   ' + '-'*38 + '\n'
             print(us_ai)
             return
 
@@ -294,32 +292,33 @@ class Game:
             print_boards()
 
             if num % 2 == 0:
-                print('̅' * 60)
                 print('Вы ходите...')
                 repeat = self.us.move()
             else:
-                print('̅' * 60)
                 print('Компьютер ходит...')
                 repeat = self.ai.move()
             if repeat:
                 num -= 1
 
             if self.ai.player_board.count == len(self.ship_lens):
-                print('̅' * 60)
                 print_boards()
                 print('Вы выиграли!')
+                sleep(5)
                 break
 
             if self.us.player_board.count == len(self.ship_lens):
-                print('̅' * 25)
                 print_boards()
                 print('Компьютер выиграл!')
+                sleep(5)
                 break
 
             num += 1
+            os.system('cls')
+            Game.poster()
 
 
 if __name__ == '__main__':
     g = Game()
     g.poster()
     g.game_step()
+
